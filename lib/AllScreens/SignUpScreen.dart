@@ -1,6 +1,18 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
+import '../main.dart';
+import 'LoginScreen.dart';
+import 'mainscreen.dart';
 
 class SignUpScreen extends StatelessWidget {
+  static const String idScreen = "signup";
+  TextEditingController nameTextEditingController = TextEditingController();
+  TextEditingController emailTextEditingController = TextEditingController();
+  TextEditingController phoneTextEditingController = TextEditingController();
+  TextEditingController passwordTextEditingController = TextEditingController();
+  // var _formkey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,6 +46,7 @@ class SignUpScreen extends StatelessWidget {
                   ),
                   TextFormField(
                     keyboardType: TextInputType.text,
+                    controller: nameTextEditingController,
                     decoration: InputDecoration(
                       labelText: "User Name",
                       labelStyle: TextStyle(
@@ -51,6 +64,7 @@ class SignUpScreen extends StatelessWidget {
                   ),
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
+                    controller: emailTextEditingController,
                     decoration: InputDecoration(
                       labelText: "Email",
                       labelStyle: TextStyle(
@@ -68,6 +82,7 @@ class SignUpScreen extends StatelessWidget {
                   ),
                   TextFormField(
                     keyboardType: TextInputType.phone,
+                    controller: phoneTextEditingController,
                     decoration: InputDecoration(
                       labelText: "Phone Number",
                       labelStyle: TextStyle(
@@ -85,6 +100,7 @@ class SignUpScreen extends StatelessWidget {
                   ),
                   TextFormField(
                     obscureText: true,
+                    controller: passwordTextEditingController,
                     decoration: InputDecoration(
                       labelText: "Password",
                       labelStyle: TextStyle(
@@ -101,7 +117,27 @@ class SignUpScreen extends StatelessWidget {
                     height: 10.0,
                   ),
                   ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        registerNewUser(context);
+                        if (nameTextEditingController.text.length < 4) {
+                          Fluttertoast.showToast(
+                              msg: "Name must be at least 4 characters.");
+                        } else if (!emailTextEditingController.text
+                            .contains("@")) {
+                          displayToastMessage(
+                              "Email address is not valid.", context);
+                        } else if (phoneTextEditingController.text.isEmpty) {
+                          displayToastMessage(
+                              "Phone number is mandatory.", context);
+                        } else if (passwordTextEditingController.text.length <
+                            6) {
+                          displayToastMessage(
+                              "Password must be at least 6 characters.",
+                              context);
+                        } else {
+                          registerNewUser(context);
+                        }
+                      },
                       child: Text(
                         "Sign Up",
                         style:
@@ -125,7 +161,10 @@ class SignUpScreen extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, LoginScreen.idScreen, (route) => false);
+              },
               child: Text(
                 "Already have an account? Register here.",
                 style: TextStyle(color: Colors.black),
@@ -135,5 +174,37 @@ class SignUpScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  registerNewUser(BuildContext context) async {
+    final User firebaseUser = (await _firebaseAuth
+            .createUserWithEmailAndPassword(
+                email: emailTextEditingController.text,
+                password: passwordTextEditingController.text)
+            .catchError((errMsg) {
+      displayToastMessage("Error: " + errMsg.toString(), context);
+    }))
+        .user;
+    if (firebaseUser != null) {
+      //user created
+      Map userDataMap = {
+        "name": nameTextEditingController.text.trim(),
+        "email": emailTextEditingController.text.trim(),
+        "phone": phoneTextEditingController.text.trim(),
+      };
+      userRef.child(firebaseUser.uid).set(userDataMap);
+      displayToastMessage(
+          "Congratulations, your account has been created.", context);
+      Navigator.pushNamedAndRemoveUntil(
+          context, MainScreen.idScreen, (route) => false);
+    } else {
+      //error occured - display error msg
+      displayToastMessage("New user account has not been created.", context);
+    }
+  }
+
+  displayToastMessage(String message, BuildContext context) {
+    Fluttertoast.showToast(msg: message);
   }
 }

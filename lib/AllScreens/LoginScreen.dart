@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'SignUpScreen.dart';
+
 class LoginScreen extends StatelessWidget {
+  static const String idScreen = "login";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +94,10 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, SignUpScreen.idScreen, (route) => false);
+              },
               child: Text(
                 "Do not have an account? Register here.",
                 style: TextStyle(color: Colors.black),
